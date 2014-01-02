@@ -29,7 +29,7 @@ instance (Fractional a) => Field (Gr a) where
 data Vector f = Vec [f]
   deriving (Eq, Read, Show)
 
-instance (Field f) => Group (Vector f) where
+instance (Group f) => Group (Vector f) where
   gzero = Vec (repeat gzero)
   gadd (Vec a) (Vec b) = Vec (zipWith gadd a b)
   gneg (Vec a) = Vec (map gneg a)
@@ -39,3 +39,20 @@ vsmul a (Vec v)  = Vec (map (fmul a) v)
 
 vimul :: (Field f) => Vector f -> Vector f -> f
 vimul (Vec v0) (Vec v1)  = foldl gadd gzero (zipWith fmul v0 v1)
+
+
+data Matrix f = Mat [(Vector f)]
+  deriving (Eq, Read, Show)
+
+instance (Group f) => Group (Matrix f) where
+  gzero = Mat (repeat gzero)
+  gadd (Mat m0) (Mat m1) = Mat (zipWith gadd m0 m1)
+  gneg (Mat m) = Mat (map gneg m)
+
+mvmul :: (Field f) => Matrix f -> Vector f -> Vector f
+mvmul (Mat m) v = Vec (map (vimul v) m)
+
+mmul :: (Field f) => Matrix f -> Matrix f -> Matrix f
+mmul m0 m1 = gzero
+
+
