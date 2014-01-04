@@ -45,6 +45,9 @@ vsmul a (Vec v)  = Vec (map (fmul a) v)
 vimul :: (MatField f) => Vector f -> Vector f -> f
 vimul (Vec v0) (Vec v1)  = foldl gadd (gzero 1) (zipWith fmul v0 v1)
 
+velem :: Vector f -> Int -> f
+velem (Vec v) n = v !! n
+
 data Matrix f = Mat [(Vector f)]
   deriving (Eq, Read, Show)
 
@@ -57,10 +60,13 @@ instance (MatGroup f) => MatGroup (Matrix f) where
 mvmul :: (MatField f) => Matrix f -> Vector f -> Vector f
 mvmul (Mat m) v = Vec (map (vimul v) m)
 
+melem :: Matrix f -> Int -> Int -> f
+melem (Mat m) row col = velem (m !! row) col
+
 mtrans :: Matrix f -> Matrix f
-mtrans (Mat m) = Mat m
+mtrans (Mat m) = Mat [Vec [velem v ix | v <- m] | ix <- [0 .. length m - 1]]
 
 mmul :: (MatField f) => Matrix f -> Matrix f -> Matrix f
 mmul (Mat m0) (Mat m1) = Mat m0
 
-
+-- instance (MatField f) => MatField (Matrix f)
