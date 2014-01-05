@@ -1,7 +1,9 @@
 module Mat
   where
 
-class MatGroup g where
+import Data.List
+
+class Eq g => MatGroup g where
   dim :: g -> Int
   gzero :: Int -> g
   gadd, gsub :: g -> g -> g
@@ -17,13 +19,13 @@ class MatGroup f => MatField f where
 data Gr a = Gr a
   deriving (Eq, Ord, Read, Show)
 
-instance (Num a) => MatGroup (Gr a) where
+instance (Num a, Eq a) => MatGroup (Gr a) where
   dim g = 0
   gzero n = Gr 0
   gadd (Gr a) (Gr b) = Gr (a + b)
   gneg (Gr a) = Gr (-a)
 
-instance (Fractional a) => MatField (Gr a) where
+instance (Fractional a, Eq a) => MatField (Gr a) where
   fone n = Gr 1
   fmul (Gr a) (Gr b) = Gr (a * b)
   finv (Gr a) = Gr (1 / a)
@@ -45,6 +47,9 @@ vimul (Vec v0) (Vec v1)  = foldl gadd (gzero 1) (zipWith fmul v0 v1)
 
 velem :: Vector f -> Int -> f
 velem (Vec v) n = v !! n
+
+velems :: Vector f -> [f]
+velems (Vec v) = v
 
 data Matrix f = Mat [(Vector f)]
   deriving (Eq, Read, Show)
@@ -75,3 +80,22 @@ mone n = Mat [Vec [if i == j then one else zero | i<-[0..n-1]] | j<-[0..n-1]]
   where
     zero = gzero 1
     one = fone 1
+
+mdet :: (MatField f) => Matrix f -> f
+mdet (Mat [Vec [a]]) = a
+mdet (Mat (v0 : vs)) = 
+  case findIndex ((gzero 1) /=) (velems v0) of
+    Nothing -> gzero 1
+    Just ix ->
+      let 
+        pivot = velem v0 ix
+        pivotv = vsmul (gneg (finv pivot)) (Vec $ removeAt ix $ velems v0) 
+        sign = if ix == 0 then fone 1 else gneg (fone 1)
+      in
+        fmul (fmul pivot sign)
+          (mdet (Mat [gadd (vsmul (v !! ix) pivotv) (Vec (removeAt ix v)) 
+                       | Vec v <- vs]))
+  where 
+    removeAt _ [] = []
+    removeAt n (v:vs) | n == 0  = vs
+    removeAt n (v:vs) = v : removeAt (n - 1) vs
