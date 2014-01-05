@@ -1,8 +1,6 @@
 module Mat
   where
 
-
-
 class MatGroup g where
   dim :: g -> Int
   gzero :: Int -> g
@@ -60,6 +58,9 @@ instance (MatGroup f) => MatGroup (Matrix f) where
 mvmul :: (MatField f) => Matrix f -> Vector f -> Vector f
 mvmul (Mat m) v = Vec (map (vimul v) m)
 
+mvecs :: Matrix f -> [Vector f]
+mvecs (Mat m) = m
+
 melem :: Matrix f -> Int -> Int -> f
 melem (Mat m) row col = velem (m !! row) col
 
@@ -67,6 +68,10 @@ mtrans :: Matrix f -> Matrix f
 mtrans (Mat m) = Mat [Vec [velem v ix | v <- m] | ix <- [0 .. length m - 1]]
 
 mmul :: (MatField f) => Matrix f -> Matrix f -> Matrix f
-mmul (Mat m0) (Mat m1) = Mat m0
+mmul m0 m1 = Mat [Vec [vimul v0 v1 | v1 <- mvecs (mtrans m1)] | v0 <- mvecs m0]
 
--- instance (MatField f) => MatField (Matrix f)
+mone :: (MatField f) => Int -> Matrix f
+mone n = Mat [Vec [if i == j then one else zero | i<-[0..n-1]] | j<-[0..n-1]]
+  where
+    zero = gzero 1
+    one = fone 1
