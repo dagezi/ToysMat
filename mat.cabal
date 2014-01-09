@@ -1,0 +1,16 @@
+name: mat
+version: 1.0
+build-type: Simple
+cabal-version: >= 1.2
+
+library
+  exposed-modules: Mat
+
+Test-Suite doctest
+  Type:                 exitcode-stdio-1.0
+  Default-Language:     Haskell2010
+  HS-Source-Dirs:       test
+  Ghc-Options:          -threaded -Wall
+  Main-Is:              doctests.hs
+  Build-Depends:        base
+                      , doctest >= 0.9.3
