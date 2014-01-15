@@ -119,11 +119,11 @@ mdet (Mat (v0 : vs)) =
     Just ix ->
       let 
         pivot = velem v0 ix
-        pivotv = vsmul (gneg (finv pivot)) (Vec $ removeAt ix $ velems v0) 
+        pivotv = vsmul (finv pivot) (Vec $ removeAt ix $ velems v0) 
         sign = if ix == 0 then fone 1 else gneg (fone 1)
       in
         fmul (fmul pivot sign)
-          (mdet (Mat [gadd (vsmul (v !! ix) pivotv) (Vec (removeAt ix v)) 
+          (mdet (Mat [gsub (Vec (removeAt ix v)) (vsmul (v !! ix) pivotv)  
                        | Vec v <- vs]))
   where 
     removeAt _ [] = []
