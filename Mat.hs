@@ -104,6 +104,13 @@ mone n = Mat [Vec [if i == j then one else zero | i<-[0..n-1]] | j<-[0..n-1]]
     zero = gzero 1
     one = fone 1
 
+-- |
+-- Determinant of maxrix
+--
+-- >>> mdet (Mat [Vec [Gr 2.0, Gr 1.0], Vec [Gr 2.0, Gr 3.0]])
+-- Gr 4.0
+-- >>> mdet (mone 3) :: (Gr Float)
+-- Gr 1.0
 mdet :: (MatField f) => Matrix f -> f
 mdet (Mat [Vec [a]]) = a
 mdet (Mat (v0 : vs)) = 
