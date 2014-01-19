@@ -96,7 +96,7 @@ mmul m0 m1 = Mat [Vec [vdot v0 v1 | v1 <- mvecs (mtrans m1)] | v0 <- mvecs m0]
 -- |
 -- Identity matrix of size n
 --
--- >>> (mone 2) :: (Matrix (Gr Float))
+-- >>> (mone 2) :: (Matrix (Gr Double))
 -- Mat [Vec [Gr 1.0,Gr 0.0],Vec [Gr 0.0,Gr 1.0]]
 mone :: (MatField f) => Int -> Matrix f
 mone n = Mat [Vec [if i == j then one else zero | i<-[0..n-1]] | j<-[0..n-1]]
@@ -109,7 +109,7 @@ mone n = Mat [Vec [if i == j then one else zero | i<-[0..n-1]] | j<-[0..n-1]]
 --
 -- >>> mdet (Mat [Vec [Gr 2.0, Gr 1.0], Vec [Gr 2.0, Gr 3.0]])
 -- Gr 4.0
--- >>> mdet (mone 3) :: (Gr Float)
+-- >>> mdet (mone 3) :: (Gr Double)
 -- Gr 1.0
 mdet :: (MatField f) => Matrix f -> f
 mdet (Mat [Vec [a]]) = a
@@ -130,18 +130,51 @@ mdet (Mat (v0 : vs)) =
     removeAt n (v:vs) | n == 0  = vs
     removeAt n (v:vs) = v : removeAt (n - 1) vs
 
+-- |
+-- Invert matrix.
+--
+-- >>> let m2One = mone 2 :: Matrix (Gr Double)
+-- >>> minv (m2One) == m2One
+-- True
+-- >>> let a = Mat [Vec [Gr 1.0, Gr 2.0], Vec [Gr 1.0, Gr 3.0]]
+-- >>> minv a
+-- Mat [Vec [Gr 3.0,Gr (-2.0)],Vec [Gr (-1.0),Gr 1.0]]
 minv :: (MatField f)=> Matrix f -> Matrix f
 minv (Mat vs) = 
-  minv' (length vs - 1) vs (mvecs (mone (length vs)))
-  where 
-   minv' ix ivs ovs =
-     if ix < 0 then (Mat ovs)
-     else
-       case findIndex (\v -> velem v ix /= gzero 1) (take ix vs) of
-         Nothing -> gzero (length ivs)  -- Non-invertible
-         Just pivotix ->
-           gzero  (length ivs)  -- Non-invertible     
+  Mat (minvStep (length vs - 1) vs (mvecs (mone (length vs))))
 
+-- |
+-- A step of invert matrix.
+--
+-- >>> let avecs = [Vec [Gr 1.0, Gr 2.0], Vec [Gr 1.0, Gr 3.0]]
+-- >>> let evecs = mvecs (mone 2) :: [Vector (Gr Double)]
+-- >>> minvStep (-1) avecs evecs == evecs
+-- True
+-- >>> minvStep (-1) evecs avecs == avecs
+-- True
+-- >>> minvStep 0 evecs evecs == evecs
+-- True
+minvStep :: (MatField f) => Int -> [Vector f] -> [Vector f] -> [Vector f]
+minvStep ix ivs ovs 
+  | ix < 0 = ovs
+  | otherwise =
+    case findIndex (\v -> velem v ix /= gzero 1) (take (ix + 1) ivs) of
+      Nothing -> error "Invertible Matrix"
+      Just pivotix ->
+        let 
+          pivot = velem (ivs !! pivotix) ix
+          ipivotv = vsmul (finv pivot) (ivs !! pivotix) 
+          opivotv = vsmul (finv pivot) (ovs !! pivotix)
+          ivrest = dropByIndex pivotix ivs
+          ovrest = dropByIndex pivotix ovs
+          vals = [velem v ix | v <- ivrest]
+        in
+          minvStep
+            (ix - 1)
+            (insertAtIndex ix ipivotv 
+               (sweepBy ivrest ipivotv vals))
+            (insertAtIndex ix opivotv 
+               (sweepBy ovrest opivotv vals))
 
 -- |
 -- Drop an element specified by index.
@@ -167,3 +200,15 @@ insertAtIndex :: Int -> a -> [a] -> [a]
 insertAtIndex _ x []  = [x]
 insertAtIndex n x xs | n <= 0  = x:xs
 insertAtIndex n x (x':xs) = x': (insertAtIndex (n - 1) x xs)
+
+-- |
+-- sweep matrix
+-- 
+-- >>> let m = [Vec [Gr 2.0, Gr 1.0], Vec [Gr 3.0, Gr 4.0]]
+-- >>> let pivotv = Vec [Gr 1.0, Gr 2.0]
+-- >>> let vals = [Gr 2.0, Gr 1.0]
+-- >>> sweepBy m pivotv vals
+-- [Vec [Gr 0.0,Gr (-3.0)],Vec [Gr 2.0,Gr 2.0]]
+sweepBy :: (MatField f) => [Vector f] -> Vector f -> [f] -> [Vector f]
+sweepBy vecs pivotv vals =
+  zipWith (\vec val -> gsub vec (vsmul val pivotv)) vecs vals
