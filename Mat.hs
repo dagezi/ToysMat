@@ -3,68 +3,11 @@ module Mat
 
 import Data.List
 import Data.Ratio
+import List
+import Field
+import Vector
 
-class Eq g => MatGroup g where
-  dim :: g -> Int
-  gzero :: Int -> g
-  gadd, gsub :: g -> g -> g
-  gneg :: g -> g
-  gsub a b  = gadd a (gneg b)
-
-class MatGroup f => MatField f where
-  fone :: Int -> f
-  fmul, fdiv :: f -> f -> f
-  finv :: f -> f
-  fdiv a b  = fmul a (finv b)
-
-data Gr a = Gr a
-  deriving (Eq, Ord, Read, Show)
-
-instance (Num a, Eq a) => MatGroup (Gr a) where
-  dim g = 0
-  gzero n = Gr 0
-  gadd (Gr a) (Gr b) = Gr (a + b)
-  gneg (Gr a) = Gr (-a)
-
-instance (Fractional a, Eq a) => MatField (Gr a) where
-  fone n = Gr 1
-  fmul (Gr a) (Gr b) = Gr (a * b)
-  finv (Gr a) = Gr (1 / a)
-
-data Vector f = Vec [f]
-  deriving (Eq, Read, Show)
-
-instance (MatGroup f) => MatGroup (Vector f) where
-  dim (Vec a) = length a
-  gzero n = Vec (take n $ repeat (gzero 1))
-  gadd (Vec a) (Vec b) = Vec (zipWith gadd a b)
-  gneg (Vec a) = Vec (map gneg a)
-
--- |
--- Vector's scalar multiplication
---
--- >>> vsmul (Gr (-1.0)) (Vec [Gr 1.0, Gr 2.0])
--- Vec [Gr (-1.0),Gr (-2.0)]
-vsmul :: (MatField f) => f -> Vector f -> Vector f
-vsmul a (Vec v)  = Vec (map (fmul a) v)
-
--- |
--- Vector's dot product
---
--- >>> vdot (Vec [Gr 1.0, Gr 2.0]) (Vec [Gr (-2.0), Gr 1.0])
--- Gr 0.0
--- >>> vdot (Vec [Gr (1%2), Gr (3%2)]) (Vec [Gr 2, Gr 4])
--- Gr (7 % 1)
-vdot :: (MatField f) => Vector f -> Vector f -> f
-vdot (Vec v0) (Vec v1)  = foldl gadd (gzero 1) (zipWith fmul v0 v1)
-
-velem :: Vector f -> Int -> f
-velem (Vec v) n = v !! n
-
-velems :: Vector f -> [f]
-velems (Vec v) = v
-
-data Matrix f = Mat [(Vector f)]
+data Matrix f = Mat [Vector f]
   deriving (Eq, Read, Show)
 
 instance (MatGroup f) => MatGroup (Matrix f) where
@@ -175,31 +118,6 @@ minvStep ix ivs ovs
                (sweepBy ivrest ipivotv vals))
             (insertAtIndex ix opivotv 
                (sweepBy ovrest opivotv vals))
-
--- |
--- Drop an element specified by index.
---
--- >>> dropByIndex 0 [1,2,3]
--- [2,3]
--- >>> dropByIndex 2 [1,2,3,4]
--- [1,2,4]
-dropByIndex :: Int -> [a] -> [a]
-dropByIndex _ [] = []
-dropByIndex n (x:xs) 
-     | n <= 0    = xs
-     | otherwise = x : (dropByIndex (n - 1) xs)
-
--- |
--- Insert an element at position specified by index.
---
--- >>> insertAtIndex 0 0 [1,2,3]
--- [0,1,2,3]
--- >>> insertAtIndex 2 3 [1,2,4]
--- [1,2,3,4]
-insertAtIndex :: Int -> a -> [a] -> [a]
-insertAtIndex _ x []  = [x]
-insertAtIndex n x xs | n <= 0  = x:xs
-insertAtIndex n x (x':xs) = x': (insertAtIndex (n - 1) x xs)
 
 -- |
 -- sweep matrix
