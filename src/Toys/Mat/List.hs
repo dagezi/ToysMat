@@ -1,4 +1,4 @@
-module List
+module Toys.Mat.List
   where
 
 -- |

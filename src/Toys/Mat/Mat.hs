@@ -1,11 +1,11 @@
-module Mat
+module Toys.Mat.Mat
   where
 
 import Data.List
 import Data.Ratio
-import List
-import Field
-import Vector
+import Toys.Mat.List
+import Toys.Mat.Field
+import Toys.Mat.Vector
 
 data Matrix f = Mat [Vector f]
   deriving (Eq, Read, Show)

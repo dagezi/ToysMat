@@ -1,4 +1,4 @@
-module Field
+module Toys.Mat.Field
   where
 
 class Eq g => MatGroup g where
