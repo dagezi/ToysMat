@@ -18,13 +18,13 @@ data Gr a = Gr a
   deriving (Eq, Ord, Read, Show)
 
 instance (Num a, Eq a) => MatGroup (Gr a) where
-  dim g = 0
-  gzero n = Gr 0
+  dim _ = 0
+  gzero _ = Gr 0
   gadd (Gr a) (Gr b) = Gr (a + b)
   gneg (Gr a) = Gr (-a)
 
 instance (Fractional a, Eq a) => MatField (Gr a) where
-  fone n = Gr 1
+  fone _ = Gr 1
   fmul (Gr a) (Gr b) = Gr (a * b)
   finv (Gr a) = Gr (1 / a)
 

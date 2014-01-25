@@ -1,9 +1,10 @@
 module Toys.Mat.Vector
   where
 
-import Data.List
-import Data.Ratio
 import Toys.Mat.Field
+
+-- $setup
+-- >>> import Data.Ratio
 
 data Vector f = Vec [f]
   deriving (Eq, Read, Show)

@@ -2,7 +2,6 @@ module Toys.Mat.Mat
   where
 
 import Data.List
-import Data.Ratio
 import Toys.Mat.List
 import Toys.Mat.Field
 import Toys.Mat.Vector
@@ -55,6 +54,7 @@ mone n = Mat [Vec [if i == j then one else zero | i<-[0..n-1]] | j<-[0..n-1]]
 -- >>> mdet (mone 3) :: (Gr Double)
 -- Gr 1.0
 mdet :: (MatField f) => Matrix f -> f
+mdet (Mat []) = gzero 0
 mdet (Mat [Vec [a]]) = a
 mdet (Mat (v0 : vs)) = 
   case findIndex ((gzero 1) /=) (velems v0) of
@@ -68,10 +68,6 @@ mdet (Mat (v0 : vs)) =
         fmul (fmul pivot sign)
           (mdet (Mat [gsub (Vec (removeAt ix v)) (vsmul (v !! ix) pivotv)  
                        | Vec v <- vs]))
-  where 
-    removeAt _ [] = []
-    removeAt n (v:vs) | n == 0  = vs
-    removeAt n (v:vs) = v : removeAt (n - 1) vs
 
 -- |
 -- Invert matrix.
