@@ -16,6 +16,14 @@ instance (MatGroup f) => MatGroup (Matrix f) where
   gneg (Mat m) = Mat (map gneg m)
 
 -- |
+-- Matrix scalar multiplication
+--
+-- >>> msmul (Gr 2.0) (mone 2)
+-- Mat [Vec [Gr 2.0,Gr 0.0],Vec [Gr 0.0,Gr 2.0]]
+msmul :: (MatField f) => f -> Matrix f -> Matrix f
+msmul a (Mat m) = Mat [vsmul a v | v <- m]
+
+-- |
 -- Matrix multiplication on Vector 
 --
 -- >>> mvmul (Mat [Vec [Gr 1, Gr 2], Vec [Gr 0, Gr 1]]) (Vec [Gr 1, Gr 2])
