@@ -112,28 +112,26 @@ minvStep ix ivs ovs
       Nothing -> error "Invertible Matrix"
       Just pivotix ->
         let 
-          pivot = velem (ivs !! pivotix) ix
-          ipivotVec = vsmul (finv pivot) (ivs !! pivotix) 
-          opivotVec = vsmul (finv pivot) (ovs !! pivotix)
-          ivrest = dropByIndex pivotix ivs
-          ovrest = dropByIndex pivotix ovs
-          coeffs = [velem v ix | v <- ivrest]
+          coeffs = [velem v ix | v <- ivs]
         in
           minvStep
             (ix - 1)
-            (insertAtIndex ix ipivotVec 
-               (sweepBy ivrest ipivotVec coeffs))
-            (insertAtIndex ix opivotVec 
-               (sweepBy ovrest opivotVec coeffs))
+            (sweepBy ivs ix pivotix coeffs)
+            (sweepBy ovs ix pivotix coeffs)
 
 -- |
--- sweep matrix
+-- sweep matrix and move pivot to specified index.
+-- Coefficient at pivotIx is divider of pivot vector.
 -- 
--- >>> let vecs = [Vec [Gr 2.0, Gr 1.0], Vec [Gr 3.0, Gr 4.0]]
--- >>> let pivotVec = Vec [Gr 1.0, Gr 2.0]
--- >>> let coeffs = [Gr 2.0, Gr 1.0]
--- >>> sweepBy vecs pivotVec coeffs
--- [Vec [Gr 0.0,Gr (-3.0)],Vec [Gr 2.0,Gr 2.0]]
-sweepBy :: (MatField f) => [Vector f] -> Vector f -> [f] -> [Vector f]
-sweepBy vecs pivotVec coeffs =
-  zipWith (\vec val -> gsub vec (vsmul val pivotVec)) vecs coeffs
+-- >>> let vecs = [Vec [Gr 2.0, Gr 1.0], Vec [Gr 2.0, Gr 4.0], Vec [Gr 3.0, Gr 4.0]]
+-- >>> let ix = 2::Int
+-- >>> let pivotIx = 1::Int
+-- >>> let coeffs = [Gr 2.0, Gr 2.0, Gr 1.0]
+-- >>> sweepBy vecs ix pivotIx coeffs
+-- [Vec [Gr 0.0,Gr (-3.0)],Vec [Gr 2.0,Gr 2.0],Vec [Gr 1.0,Gr 2.0]]
+sweepBy :: (MatField f) => [Vector f] -> Int -> Int -> [f] -> [Vector f]
+sweepBy vecs ix pivotIx coeffs =
+  insertAtIndex ix pivotVec
+    [gsub vec (vsmul coeff pivotVec) | (vec, coeff)<-dropByIndex pivotIx $ zip vecs coeffs]
+     where
+       pivotVec = vsmul (finv (coeffs !! pivotIx)) (vecs !! pivotIx) 
