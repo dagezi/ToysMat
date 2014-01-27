@@ -19,6 +19,12 @@ instance Arbitrary f => Arbitrary (Vector f) where
     xs <- sequence [arbitrary, arbitrary, arbitrary, arbitrary]
     return $ Vec xs
 
+-- Supports only 4 dimension matrix
+instance Arbitrary f => Arbitrary (Matrix f) where
+  arbitrary = do
+    vectors <- sequence [arbitrary, arbitrary, arbitrary, arbitrary]
+    return $ Mat vectors
+
 vec0_4 :: Vector (Gr Rational)
 vec0_4 = gzero 4
 
@@ -56,3 +62,17 @@ spec = do
          (mat1_4 `mmul` mat0_4) `shouldBe` mat0_4
        it "one `mmul` one = one" $
          (mat1_4 `mmul` mat1_4) `shouldBe` mat1_4
+
+       prop "zero `mmul` arbitrary == zero" $ \m_4 ->
+         mat0_4 `mmul` m_4 == mat0_4
+       prop "one `mmul` arbitrary == same matrix" $ \m_4 ->
+         mat1_4 `mmul` m_4 == m_4
+
+     describe "minv" $ do
+       it "minv one == one" $
+         (minv mat1_4) `shouldBe` mat1_4
+       it "(minv two) `mmul` two == one" $
+         ((minv mat2_4) `mmul` mat2_4) `shouldBe` mat1_4
+
+       prop "(minv any mat) `mmul` same mat == one or invertible" $ \m_4 ->
+         mdet m_4 == gzero 1 || (minv m_4) `mmul` m_4 == mat1_4
