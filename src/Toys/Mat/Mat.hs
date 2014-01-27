@@ -108,16 +108,11 @@ minvStep :: (MatField f) => Int -> [Vector f] -> [Vector f] -> [Vector f]
 minvStep ix ivs ovs 
   | ix < 0 = ovs
   | otherwise =
-    case findIndex (\v -> velem v ix /= gzero 1) (take (ix + 1) ivs) of
-      Nothing -> error "Invertible Matrix"
-      Just pivotix ->
-        let 
-          coeffs = [velem v ix | v <- ivs]
-        in
-          minvStep
-            (ix - 1)
-            (sweepBy ivs ix pivotix coeffs)
-            (sweepBy ovs ix pivotix coeffs)
+    let coeffs = [velem v ix | v <- ivs]
+    in  case findIndex (gzero 1 /=) (take (ix+1) coeffs) of
+          Nothing -> error "Invertible Matrix"
+          Just pivotix ->
+            minvStep (ix-1) (sweepBy ivs ix pivotix coeffs) (sweepBy ovs ix pivotix coeffs)
 
 -- |
 -- sweep matrix and move pivot to specified index.
