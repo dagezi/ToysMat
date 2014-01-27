@@ -25,16 +25,3 @@ insertAtIndex :: Int -> a -> [a] -> [a]
 insertAtIndex _ x []  = [x]
 insertAtIndex n x xs | n <= 0  = x:xs
 insertAtIndex n x (x':xs) = x' : (insertAtIndex (n - 1) x xs)
-
--- |
--- Remove an element at position specified by index.
---
--- >>> removeAt 0 [0,1,2]
--- [1,2]
--- >>> removeAt 2 [0,1,2]
--- [0,1]
-removeAt :: Int -> [a] -> [a]
-removeAt _ [] = []
-removeAt n (_:xs) | n == 0  = xs
-removeAt n (x:xs) = x : removeAt (n - 1) xs
-
