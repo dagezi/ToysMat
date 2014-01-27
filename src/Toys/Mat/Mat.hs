@@ -10,10 +10,10 @@ data Matrix f = Mat [Vector f]
   deriving (Eq, Read, Show)
 
 instance (MatGroup f) => MatGroup (Matrix f) where
-  dim (Mat m) = length m
+  dim (Mat vecs) = length vecs
   gzero n = Mat (take n $ repeat (gzero n))
-  gadd (Mat m0) (Mat m1) = Mat (zipWith gadd m0 m1)
-  gneg (Mat m) = Mat (map gneg m)
+  gadd (Mat vecs0) (Mat vecs1) = Mat (zipWith gadd vecs0 vecs1)
+  gneg (Mat vecs) = Mat (map gneg vecs)
 
 -- |
 -- Matrix scalar multiplication
@@ -21,7 +21,7 @@ instance (MatGroup f) => MatGroup (Matrix f) where
 -- >>> msmul (Gr 2.0) (mone 2)
 -- Mat [Vec [Gr 2.0,Gr 0.0],Vec [Gr 0.0,Gr 2.0]]
 msmul :: (MatField f) => f -> Matrix f -> Matrix f
-msmul a (Mat m) = Mat [vsmul a v | v <- m]
+msmul a (Mat vecs) = Mat [vsmul a v | v <- vecs]
 
 -- |
 -- Matrix multiplication on Vector 
@@ -29,16 +29,16 @@ msmul a (Mat m) = Mat [vsmul a v | v <- m]
 -- >>> mvmul (Mat [Vec [Gr 1, Gr 2], Vec [Gr 0, Gr 1]]) (Vec [Gr 1, Gr 2])
 -- Vec [Gr 5.0,Gr 2.0]
 mvmul :: (MatField f) => Matrix f -> Vector f -> Vector f
-mvmul (Mat m) v = Vec (map (vdot v) m)
+mvmul (Mat vecs) v = Vec (map (vdot v) vecs)
 
 mvecs :: Matrix f -> [Vector f]
-mvecs (Mat m) = m
+mvecs (Mat vecs) = vecs
 
 melem :: Matrix f -> Int -> Int -> f
-melem (Mat m) row col = velem (m !! row) col
+melem (Mat vecs) row col = velem (vecs !! row) col
 
 mtrans :: Matrix f -> Matrix f
-mtrans (Mat m) = Mat [Vec [velem v ix | v <- m] | ix <- [0 .. length m - 1]]
+mtrans (Mat vecs) = Mat [Vec [velem v ix | v <- vecs] | ix <- [0 .. length vecs - 1]]
 
 mmul :: (MatField f) => Matrix f -> Matrix f -> Matrix f
 mmul m0 m1 = Mat [Vec [vdot v0 v1 | v1 <- mvecs (mtrans m1)] | v0 <- mvecs m0]
@@ -64,18 +64,18 @@ mone n = Mat [Vec [if i == j then one else zero | i<-[0..n-1]] | j<-[0..n-1]]
 mdet :: (MatField f) => Matrix f -> f
 mdet (Mat []) = gzero 0
 mdet (Mat [Vec [a]]) = a
-mdet (Mat (v0 : vs)) = 
+mdet (Mat (v0 : vecs)) = 
   case findIndex ((gzero 1) /=) (velems v0) of
     Nothing -> gzero 1
     Just ix ->
       let 
         pivot = velem v0 ix
-        pivotv = vsmul (finv pivot) (Vec $ dropByIndex ix $ velems v0)
+        pivotVec = vsmul (finv pivot) (Vec $ dropByIndex ix $ velems v0)
         sign = if ix == 0 then fone 1 else gneg (fone 1)
       in
         fmul (fmul pivot sign)
-          (mdet (Mat [gsub (Vec (dropByIndex ix v)) (vsmul (v !! ix) pivotv)
-                       | Vec v <- vs]))
+          (mdet (Mat [gsub (Vec (dropByIndex ix v)) (vsmul (v !! ix) pivotVec)
+                       | Vec v <- vecs]))
 
 -- |
 -- Invert matrix.
@@ -87,11 +87,14 @@ mdet (Mat (v0 : vs)) =
 -- >>> minv a
 -- Mat [Vec [Gr 3.0,Gr (-2.0)],Vec [Gr (-1.0),Gr 1.0]]
 minv :: (MatField f)=> Matrix f -> Matrix f
-minv (Mat vs) = 
-  Mat (minvStep (length vs - 1) vs (mvecs (mone (length vs))))
+minv (Mat vecs) = 
+  Mat (minvStep (length vecs - 1) vecs (mvecs (mone (length vecs))))
 
 -- |
 -- A step of invert matrix.
+-- Find a row whose ix's element is not 0 and sweep whole matrix.
+-- Apply this operation to 'ovs', too.
+-- Repeat them until ix gets negative.
 --
 -- >>> let avecs = [Vec [Gr 1.0, Gr 2.0], Vec [Gr 1.0, Gr 3.0]]
 -- >>> let evecs = mvecs (mone 2) :: [Vector (Gr Double)]
@@ -110,27 +113,27 @@ minvStep ix ivs ovs
       Just pivotix ->
         let 
           pivot = velem (ivs !! pivotix) ix
-          ipivotv = vsmul (finv pivot) (ivs !! pivotix) 
-          opivotv = vsmul (finv pivot) (ovs !! pivotix)
+          ipivotVec = vsmul (finv pivot) (ivs !! pivotix) 
+          opivotVec = vsmul (finv pivot) (ovs !! pivotix)
           ivrest = dropByIndex pivotix ivs
           ovrest = dropByIndex pivotix ovs
-          vals = [velem v ix | v <- ivrest]
+          coeffs = [velem v ix | v <- ivrest]
         in
           minvStep
             (ix - 1)
-            (insertAtIndex ix ipivotv 
-               (sweepBy ivrest ipivotv vals))
-            (insertAtIndex ix opivotv 
-               (sweepBy ovrest opivotv vals))
+            (insertAtIndex ix ipivotVec 
+               (sweepBy ivrest ipivotVec coeffs))
+            (insertAtIndex ix opivotVec 
+               (sweepBy ovrest opivotVec coeffs))
 
 -- |
 -- sweep matrix
 -- 
--- >>> let m = [Vec [Gr 2.0, Gr 1.0], Vec [Gr 3.0, Gr 4.0]]
--- >>> let pivotv = Vec [Gr 1.0, Gr 2.0]
--- >>> let vals = [Gr 2.0, Gr 1.0]
--- >>> sweepBy m pivotv vals
+-- >>> let vecs = [Vec [Gr 2.0, Gr 1.0], Vec [Gr 3.0, Gr 4.0]]
+-- >>> let pivotVec = Vec [Gr 1.0, Gr 2.0]
+-- >>> let coeffs = [Gr 2.0, Gr 1.0]
+-- >>> sweepBy vecs pivotVec coeffs
 -- [Vec [Gr 0.0,Gr (-3.0)],Vec [Gr 2.0,Gr 2.0]]
 sweepBy :: (MatField f) => [Vector f] -> Vector f -> [f] -> [Vector f]
-sweepBy vecs pivotv vals =
-  zipWith (\vec val -> gsub vec (vsmul val pivotv)) vecs vals
+sweepBy vecs pivotVec coeffs =
+  zipWith (\vec val -> gsub vec (vsmul val pivotVec)) vecs coeffs
