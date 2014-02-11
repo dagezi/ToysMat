@@ -1,5 +1,7 @@
 module MatSpec where
 
+import Data.Ratio
+
 import Toys.Mat.Field
 import Toys.Mat.Vector
 import Toys.Mat.Mat
@@ -7,11 +9,6 @@ import Toys.Mat.Mat
 import Test.Hspec
 import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck hiding ((.&.))
-
-instance Arbitrary f => Arbitrary (Gr f) where
-  arbitrary = do
-    x <- arbitrary
-    return $ Gr x
 
 -- Supports only 4 dimension vector
 instance Arbitrary f => Arbitrary (Vector f) where
@@ -25,17 +22,17 @@ instance Arbitrary f => Arbitrary (Matrix f) where
     vectors <- sequence [arbitrary, arbitrary, arbitrary, arbitrary]
     return $ Mat vectors
 
-vec0_4 :: Vector (Gr Rational)
+vec0_4 :: Vector Rational
 vec0_4 = gzero 4
 
-mat0_4 :: Matrix (Gr Rational)
+mat0_4 :: Matrix Rational
 mat0_4 = gzero 4
 
-mat1_4 :: Matrix (Gr Rational)
+mat1_4 :: Matrix Rational
 mat1_4 = mone 4
 
-mat2_4 :: Matrix (Gr Rational)
-mat2_4 = msmul (Gr 2) mat1_4
+mat2_4 :: Matrix Rational
+mat2_4 = msmul (2 % 1) mat1_4
 
 spec :: Spec
 spec = do

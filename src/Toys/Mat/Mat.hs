@@ -18,16 +18,16 @@ instance (MatGroup f) => MatGroup (Matrix f) where
 -- |
 -- Matrix scalar multiplication
 --
--- >>> msmul (Gr 2.0) (mone 2)
--- Mat [Vec [Gr 2.0,Gr 0.0],Vec [Gr 0.0,Gr 2.0]]
+-- >>> msmul 2.0 (mone 2)
+-- Mat [Vec [2.0,0.0],Vec [0.0,2.0]]
 msmul :: (MatField f) => f -> Matrix f -> Matrix f
 msmul a (Mat vecs) = Mat [vsmul a v | v <- vecs]
 
 -- |
 -- Matrix multiplication on Vector 
 --
--- >>> mvmul (Mat [Vec [Gr 1, Gr 2], Vec [Gr 0, Gr 1]]) (Vec [Gr 1, Gr 2])
--- Vec [Gr 5.0,Gr 2.0]
+-- >>> mvmul (Mat [Vec [1,2], Vec [0,1]]) (Vec [1,2])
+-- Vec [5.0,2.0]
 mvmul :: (MatField f) => Matrix f -> Vector f -> Vector f
 mvmul (Mat vecs) v = Vec (map (vdot v) vecs)
 
@@ -46,8 +46,8 @@ mmul m0 m1 = Mat [Vec [vdot v0 v1 | v1 <- mvecs (mtrans m1)] | v0 <- mvecs m0]
 -- |
 -- Identity matrix of size n
 --
--- >>> (mone 2) :: (Matrix (Gr Double))
--- Mat [Vec [Gr 1.0,Gr 0.0],Vec [Gr 0.0,Gr 1.0]]
+-- >>> (mone 2) :: Matrix Double
+-- Mat [Vec [1.0,0.0],Vec [0.0,1.0]]
 mone :: (MatField f) => Int -> Matrix f
 mone n = Mat [Vec [if i == j then one else zero | i<-[0..n-1]] | j<-[0..n-1]]
   where
@@ -57,10 +57,10 @@ mone n = Mat [Vec [if i == j then one else zero | i<-[0..n-1]] | j<-[0..n-1]]
 -- |
 -- Determinant of maxrix
 --
--- >>> mdet (Mat [Vec [Gr 2.0, Gr 1.0], Vec [Gr 2.0, Gr 3.0]])
--- Gr 4.0
--- >>> mdet (mone 3) :: (Gr Double)
--- Gr 1.0
+-- >>> mdet (Mat [Vec [2.0,1.0], Vec [2.0,3.0]])
+-- 4.0
+-- >>> mdet (mone 3) :: Double
+-- 1.0
 mdet :: (MatField f) => Matrix f -> f
 mdet (Mat []) = gzero 0
 mdet (Mat [Vec [a]]) = a
@@ -80,12 +80,12 @@ mdet (Mat (v0 : vecs)) =
 -- |
 -- Invert matrix.
 --
--- >>> let m2One = mone 2 :: Matrix (Gr Double)
+-- >>> let m2One = mone 2 :: Matrix Double
 -- >>> minv (m2One) == m2One
 -- True
--- >>> let a = Mat [Vec [Gr 1.0, Gr 2.0], Vec [Gr 1.0, Gr 3.0]]
+-- >>> let a = Mat [Vec [1.0, 2.0], Vec [1.0, 3.0]]
 -- >>> minv a
--- Mat [Vec [Gr 3.0,Gr (-2.0)],Vec [Gr (-1.0),Gr 1.0]]
+-- Mat [Vec [3.0,-2.0],Vec [-1.0,1.0]]
 minv :: (MatField f)=> Matrix f -> Matrix f
 minv (Mat vecs) = 
   Mat (minvStep (length vecs - 1) vecs (mvecs (mone (length vecs))))
@@ -96,8 +96,8 @@ minv (Mat vecs) =
 -- Apply this operation to 'ovs', too.
 -- Repeat them until ix gets negative.
 --
--- >>> let avecs = [Vec [Gr 1.0, Gr 2.0], Vec [Gr 1.0, Gr 3.0]]
--- >>> let evecs = mvecs (mone 2) :: [Vector (Gr Double)]
+-- >>> let avecs = [Vec [1.0,2.0], Vec [1.0,3.0]]
+-- >>> let evecs = mvecs (mone 2) :: [Vector Double]
 -- >>> minvStep (-1) avecs evecs == evecs
 -- True
 -- >>> minvStep (-1) evecs avecs == avecs
@@ -118,12 +118,12 @@ minvStep ix ivs ovs
 -- sweep matrix and move pivot to specified index.
 -- Coefficient at pivotIx is divider of pivot vector.
 -- 
--- >>> let vecs = [Vec [Gr 2.0, Gr 1.0], Vec [Gr 2.0, Gr 4.0], Vec [Gr 3.0, Gr 4.0]]
+-- >>> let vecs = [Vec [2.0,1.0], Vec [2.0,4.0], Vec [3.0,4.0]]
 -- >>> let ix = 2::Int
 -- >>> let pivotIx = 1::Int
--- >>> let coeffs = [Gr 2.0, Gr 2.0, Gr 1.0]
+-- >>> let coeffs = [2.0,2.0,1.0]
 -- >>> sweepBy vecs ix pivotIx coeffs
--- [Vec [Gr 0.0,Gr (-3.0)],Vec [Gr 2.0,Gr 2.0],Vec [Gr 1.0,Gr 2.0]]
+-- [Vec [0.0,-3.0],Vec [2.0,2.0],Vec [1.0,2.0]]
 sweepBy :: (MatField f) => [Vector f] -> Int -> Int -> [f] -> [Vector f]
 sweepBy vecs ix pivotIx coeffs =
   insertAtIndex ix pivotVec
