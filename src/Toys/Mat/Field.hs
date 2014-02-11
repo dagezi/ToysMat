@@ -1,6 +1,8 @@
 module Toys.Mat.Field
   where
 
+import Data.Ratio
+
 class Eq g => MatGroup g where
   dim :: g -> Int
   gzero :: Int -> g
@@ -14,17 +16,55 @@ class MatGroup f => MatField f where
   finv :: f -> f
   fdiv a b  = fmul a (finv b)
 
-data Gr a = Gr a
-  deriving (Eq, Ord, Read, Show)
+instance MatGroup Int where
+  dim _ = 1
+  gzero _ = 0
+  gadd = (+)
+  gsub = (-)
+  gneg = negate
 
-instance (Num a, Eq a) => MatGroup (Gr a) where
-  dim _ = 0
-  gzero _ = Gr 0
-  gadd (Gr a) (Gr b) = Gr (a + b)
-  gneg (Gr a) = Gr (-a)
+instance MatGroup Integer where
+  dim _ = 1
+  gzero _ = 0
+  gadd = (+)
+  gsub = (-)
+  gneg = negate
 
-instance (Fractional a, Eq a) => MatField (Gr a) where
-  fone _ = Gr 1
-  fmul (Gr a) (Gr b) = Gr (a * b)
-  finv (Gr a) = Gr (1 / a)
+instance MatGroup Float where
+  dim _ = 1
+  gzero _ = 0
+  gadd = (+)
+  gsub = (-)
+  gneg = negate
 
+instance MatField Float where
+  fone _ = 1
+  fmul = (*)
+  fdiv = (/)
+  finv = recip
+
+instance MatGroup Double where
+  dim _ = 1
+  gzero _ = 0
+  gadd = (+)
+  gsub = (-)
+  gneg = negate
+
+instance MatField Double where
+  fone _ = 1
+  fmul = (*)
+  fdiv = (/)
+  finv = recip
+
+instance (Eq a, Integral a) => MatGroup (Ratio a) where
+  dim _ = 1
+  gzero _ = 0 % 1
+  gadd = (+)
+  gsub = (-)
+  gneg = negate
+
+instance (Eq a, Integral a) => MatField (Ratio a) where
+  fone _ = 1 % 1
+  fmul = (*)
+  fdiv = (/)
+  finv = recip
